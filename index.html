@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>WebGL Tests</title>
+    <link href="stylesheet.css" rel="stylesheet" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script type="text/javascript" src="javascript/utils/setupGL.js"></script>
+    <script type="text/javascript" src="javascript/utils/sylvester.js"></script>
+    <script type="text/javascript" src="javascript/utils/glUtils.js"></script>
+    <script type="text/javascript" src="javascript/utils/shaderSetup.js"></script>
+    <script type="text/javascript" src="javascript/animationHandler.js"></script>
+    <script type="text/javascript" src="javascript/utils/matrixUtils.js"></script>
+    <script type="text/javascript" src="javascript/newFunctions.js"></script>
+    <script type="text/javascript" src="javascript/cubeFunc.js"></script>
+    <script type="text/javascript" src="javascript/createSphere.js"></script>
+    <script type="text/javascript" src="javascript/variables.js"></script>
+    <script type="text/javascript" src="javascript/ui.js"></script>
+    
+    <!-- Fragment shader program -->
+    <script id="shader-fs" type="x-shader/x-fragment">
+      varying lowp vec4 vColor;
+      varying highp vec3 vLighting;
+      
+      void main(void) {
+        gl_FragColor = vec4(vColor.rgb * vLighting, vColor.a);
+      }
+    </script>
+
+    <!-- Vertex shader program -->
+    <script id="shader-vs" type="x-shader/x-vertex">
+      attribute highp vec3 aVertexNormal;
+      attribute highp vec3 aVertexPosition;
+      attribute highp vec4 aVertexColor;
+    
+      uniform highp mat4 uNormalMatrix;
+      uniform highp mat4 uMVMatrix;
+      uniform highp mat4 uPMatrix;
+      
+      uniform highp vec3 uAmbientLight;
+      uniform highp vec3 uDirectionalLightColor;
+      uniform highp vec3 uDirectionalVector;
+      
+      varying lowp vec4 vColor;
+      varying highp vec3 vLighting;
+    
+      void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vColor = aVertexColor;
+        
+        // Apply lighting effecs
+        highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);
+        
+        highp float directional = max(dot(transformedNormal.xyz, uDirectionalVector), 0.0);
+        vLighting = uAmbientLight + (uDirectionalLightColor * directional);
+      }
+    </script>
+  </head>
+  
+  <body onload="start()">
+    <h1>WebGL Matrix <span id="how">Help</span></h1>
+    <div id="canvases">
+      <canvas id="glcanvas" width="640" height="480" style="border: 1px solid lightgray;">
+        Your browser doesn't appear to support the 
+        <code>canvas</code> element.
+      </canvas>
+      <canvas id="textcanvas" width="640" height="480">
+        Your browser doesn't appear to support the 
+        <code>canvas</code> element.
+      </canvas>
+    </div>
+    <br>
+    <div id="inputs">
+      <label class="label">X Trans: </label>
+      <input type="text" class="input" id="0inc" maxlength="5" size="5">
+      <label class="label">Y Trans: </label>
+      <input type="text" class="input" id="1inc" maxlength="5" size="5">
+      <label class="label">Z Trans: </label>
+      <input type="text" class="input" id="2inc" maxlength="5" size="5">
+      <label class="label">X Rot: </label>
+      <input type="text" class="input" id="3inc" maxlength="5" size="5">
+      <label class="label">Y Rot: </label>
+      <input type="text" class="input" id="4inc" maxlength="5" size="5">
+    </div>
+    <input class="button" type="submit" bAction="update" value="Update">
+    <input class="button" type="submit" bAction="play" value="Play">
+    <div id="mousePos">Mouse X: 0 Mouse Y: 0</div>
+    <div id="vertMat">
+      Original Vertex Matrix
+    </div>
+    
+    <div id="matrixContainer">
+      <div id="matrixStack"></div>
+    </div>
+    
+    <div id="explain">
+      <div id="close-explain">Close</div>
+      <p>When you click update or hit enter, the rotation and translation of the cube changes by the corresponding amounts in each input area (you can edit these). You will see the cube transformed in 3D space and return to its starting position once its Y value has exceeded a certain amount. The Mouse X and Mouse Y text tells you where your mouse is in the two dimensional canvas. The top right corner is (1,1) and the bottom left is (-1,-1). The Original Vertex Matrix is the original 8 vertices of the cube before it was transformed. On the right you see matricies labeled 0-6, with a corresponding explanation (The Model View Matrix(4) is the Y Rotation times(3) the X Rotation(2) times the translation(1)). The Model Vertex Matrix(5) is the Model View Matrix(4) times the Original Vertex Matrix. Finally, the Screen Vertex Matrix(6). First, do Perspective Matrix(0)*Model Vertex Matrix(5) and store it in a 4 by m(number of vertices) matrix called A. Then, to find the X screen coordinates (from -1 to 1), we divide every element in the 1st row of A by every element in the 4th row of A (1st vertex screen x position=A11/A41). To find the Y screen coordinates, we divide every element in the 2nd row of A by every element in the 4th row of A (1st vertex screen y position=A21/A41). You can verify this by moving your mouse over vertex 1 on the cube and comparing it to the fist column in Screen Vertex Matrix(6) (They should be pretty close). In other words, the first two rows of the Screen Vertex Matrix are the x and y positions of the vertices on the screen and the third row is depth information to calculate which vertices can't be seen.</p>
+    </div>
+    
+  </body>
+</html>
